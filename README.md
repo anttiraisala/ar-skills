@@ -29,7 +29,7 @@ Rules for AI assistants working in this repo are in [CLAUDE.md](CLAUDE.md); stat
 <!-- skills:start -->
 | Skill | Version | What it does | Download |
 |---|---|---|---|
-| [ar-git-repo](skills/ar-git-repo/) | 3 | Creates, checks and maintains GitHub repositories (master branch, MIT, README, CLAUDE.md, PROGRESS.md), suggests repo names and keeps this list up to date. | [SKILL.md](https://raw.githubusercontent.com/anttiraisala/ar-skills/master/skills/ar-git-repo/SKILL.md) |
+| [ar-git-repo](skills/ar-git-repo/) | 4 | Creates, checks and maintains GitHub repositories (master branch, MIT, README, CLAUDE.md, PROGRESS.md), suggests repo names, builds an external commit package when a push fails, and keeps this list up to date. | [SKILL.md](https://raw.githubusercontent.com/anttiraisala/ar-skills/master/skills/ar-git-repo/SKILL.md) |
 | [ar-requirement-driven-development](skills/ar-requirement-driven-development/) | 1 | Guides Requirement Driven Development (RDD) in a project: interviews the user and keeps the requirements, ideas, action points and progress files current. | [SKILL.md](https://raw.githubusercontent.com/anttiraisala/ar-skills/master/skills/ar-requirement-driven-development/SKILL.md) |
 | [ar-skill-repo](skills/ar-skill-repo/) | 3 | Maintains this skills collection: add, update, check, pack and tag skills, keeps the README AI section and skill list in sync, checks Requires links. | [SKILL.md](https://raw.githubusercontent.com/anttiraisala/ar-skills/master/skills/ar-skill-repo/SKILL.md) |
 <!-- skills:end -->

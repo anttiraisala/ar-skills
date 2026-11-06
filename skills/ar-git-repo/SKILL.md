@@ -1,11 +1,11 @@
 ---
 name: ar-git-repo
-description: Create, check or maintain a GitHub repository for a project (default owner anttiraisala, branch master, MIT). Use when asked to create a repo, check a repo ("check repo", "tsekkaa repo"), suggest a repo name ("suggest repo name", "ehdota repon nimeä", "keksi repolle nimi"), fix main/master, or add a skill to ar-skills.
+description: Create, check or maintain a GitHub repository for a project (default owner anttiraisala, branch master, MIT). Use when asked to create a repo, check a repo ("check repo", "tsekkaa repo"), suggest a repo name ("suggest repo name", "ehdota repon nimeä", "keksi repolle nimi"), fix main/master, add a skill to ar-skills, or make an external commit ("external commit", "ulkoinen commit", "tee ulkoinen commit", "deferred commit") when a commit or push cannot be done in this session.
 ---
 
 # ar-git-repo
 
-Version: 3 (raise by one on every change to this file, and keep the number in the README skill list the same).
+Version: 4 (raise by one on every change to this file, and keep the number in the README skill list the same).
 
 Creates, checks and maintains Git repositories the way the maintainer wants them. Chat in the language the user writes in; everything written into a repository is in English.
 
@@ -22,7 +22,7 @@ Before every commit and push:
 1. Update all description files the change touches: `README.md`, `CLAUDE.md`, `PROGRESS.md`, and in a skills collection the skill list in the README.
 2. Tell the user briefly (a few lines) what you are about to commit and push: files, branch, message.
 3. Wait for the user's go-ahead. Only an explicit instruction to do it counts. If the user has just given that instruction for this very commit, go ahead.
-4. After the push, check that the remote branch equals `HEAD` (`git ls-remote origin master` against `git rev-parse HEAD`) and that `git status -sb` shows no `ahead`.
+4. After the push, check that the remote branch equals `HEAD` (`git ls-remote origin master` against `git rev-parse HEAD`) and that `git status -sb` shows no `ahead`. If the commit or the push fails, follow Mode 5 (external commit).
 
 Commit messages are English and end with the attribution lines the session gives.
 
@@ -73,6 +73,36 @@ Triggered by "suggest repo name", "ehdota repon nimeä", "keksi repolle nimi" or
 5. Output: one table per style with three columns: name, idea (one sentence: why the name works), description (one line in English, about 80 to 100 characters, written to fit that name's angle, not the same sentence for every name). Then your three favourites with one sentence each. Offer another round on request.
 6. When the user picks a name, use its description as it is in `gh repo create ... --description "..."` (or give it for the browser form), and use the same sentence as the README's one-line description.
 
+## Mode 5: external commit (when this session cannot push)
+
+Triggered by "create external commit", "external commit", "tee ulkoinen commit", "ulkoinen commit", "deferred commit", and automatically when a commit or push fails and step 2 below does not fix it. It is not a project handoff: it moves one finished change to a place that can push (the user's machine, or another AI session with write access).
+
+1. Name the cause of the failure in one line (blocked by the permission classifier, 403 from the git proxy, repository not attached, no network, no credentials).
+2. Try the fixes once each, in this order: push again; if the error says the repository is not in the session's sources and an `add_repo` tool exists, attach the repository with push access and push from the existing clone; a connected GitHub tool that can write files to the branch. A denial by a permission classifier is final for this session: do not look for another way around it, go to step 3.
+3. Build the package without asking: the user already asked for the commit, and the package changes nothing until it is run.
+
+What goes in: the commits that are not on the remote, or the working-tree changes if nothing is committed. Several unpushed commits become one external commit; the original messages go into the commit body. One package, one logical change.
+
+The package is one zip, `external-commit-<repo>-<YYYY-MM-DD>.zip`, built from the real files by commands (`git diff --name-status`, `sha256sum`, `wc -c`, file modes), never from memory:
+
+- `files/`: the new content of every added or changed file, byte for byte.
+- `apply.sh`: a self-contained bash script with the file contents embedded (text through quoted heredocs with a delimiter that does not occur in the content, binary files as base64). It needs only `git`, `bash` and `sha256sum`; never `sudo`, `rm -rf` outside its own temporary directory, `--force`, tokens, or network access other than git. It asks nothing. Flags: `--dry-run` (show what would change, commit nothing) and `--no-push`. It does this:
+  1. Clone the target repository into a fresh temporary directory and check out the branch.
+  2. Guard: every changed or deleted file must still have the old-content SHA-256 recorded when the package was built, and every added file must be absent or already equal to the new content. If one does not, print which file, change nothing, exit 2. If only other files changed on the remote since the base commit, go on and say so.
+  3. If every file already equals the new content, print "nothing to do" and exit 0.
+  4. Write the files and set their modes, apply deletions and renames (`git rm`, `git mv`), check the new hashes, commit with the recorded message.
+  5. Push (never force). If the push is rejected, fetch and rebase once; on a conflict abort the rebase, exit 3, nothing is pushed.
+  6. Check that `git ls-remote origin <branch>` equals the new `HEAD`, print `PASS <sha>` or `FAIL <reason>` and the undo command `git revert <sha>`.
+- `REPORT.md`: repository, branch, base commit, commit message, a table of every file (action, old SHA-256, new SHA-256, size, mode), how to run, how to undo, and the list of commands that produced the manifest. If a command could not run, say so in the report.
+- `PROMPT.txt`: text to paste into another AI session with write access. If the changes total under about 40 kB it is the inline form: the task, the rules (write each file byte for byte between the markers, overwrite, touch no other file, never force-push, stop and report if the old content does not match), the files in `=====FILE: path=====` and `=====END FILE=====` blocks, a table of SHA-256 values, and the report format asked for (in the user's language, at most five lines: commit SHA, whether verification passed, anything unexpected). Otherwise it is the zip form: unpack the attached package, run `bash apply.sh`, report the same way.
+- `SHA256SUMS` for every file in the package.
+
+The `PROGRESS.md` row for the change is part of the package and says "applied via external commit".
+
+After building: send the zip with the file tool, give the paste text in the chat (when it is short), and say in a few lines in the user's language that there are two ways: run `bash apply.sh`, or paste the prompt into an AI session with write access. Do not say anything was pushed.
+
+When the user brings back the result (commit SHA and PASS), check it with `git ls-remote https://github.com/OWNER/NAME.git <branch>` and say whether the remote equals it. If it cannot be checked, say so. External commit packages are never committed to the repository.
+
 ## Mode 3: skills collection (ar-skills)
 
 The repo `anttiraisala/ar-skills` collects the maintainer's skills, one folder per skill in `skills/<name>/SKILL.md`. When a skill is added or changed:
@@ -92,6 +122,6 @@ This skill is loaded from the user's account, but its source of truth is the rep
 
 1. Make sure the repo is attached to the session and cloned (`add_repo` with push access if it is not), then edit `skills/<name>/SKILL.md` there and raise its `Version:` by one.
 2. Update the README skill list (row text and version), `PROGRESS.md` and, if a rule changed, `CLAUDE.md`.
-3. Follow the announce-update-wait rule, then commit, push and verify.
+3. Follow the announce-update-wait rule, then commit, push and verify (Mode 5 if the push fails).
 4. Show the full updated text as a review card (`propose_skills`) and tell the user to save it, because until he does the account copy stays old.
 5. The repo settings (description, default branch) may be unwritable from a session; then say so and give the browser steps.
