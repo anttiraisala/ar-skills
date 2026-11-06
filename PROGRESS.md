@@ -5,6 +5,7 @@
 | 1 | 2026-11-06 | Repository created; first commit with `ar-git-repo` (create, check and maintain repos, skills-collection mode, README skill list). |
 | 2 | 2026-11-06 | `ar-git-repo` version 2: version line, version check in check mode, "Source and updating" section; README list shows versions. |
 | 3 | 2026-11-06 | `ar-skill-repo` version 3 added: maintains the skills collection (list, add, update, rename, remove, sync, check, deps, status, pack, tag, history, new, review). `sync` rewrites the README "For use with AI" section and the skill list; `Requires:` convention with cycle and missing-skill check; critique rule; Finnish trigger phrases with diacritics. |
+| 4 | 2026-11-06 | `ar-git-repo` version 3: new Mode 4 "suggest repo name" (reads the conversation, default 20 names in five styles with an idea and a one-line description each, three favourites, availability check, asks which project when there are several); Mode 1 calls it when no name is given; Finnish trigger phrases added to the description. |
 
 ## Testing
 

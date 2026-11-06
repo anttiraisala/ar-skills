@@ -1,11 +1,11 @@
 ---
 name: ar-git-repo
-description: Create, check or maintain a GitHub repository for a project (default owner anttiraisala, branch master, MIT). Use when asked to create a repo, check a repo ("check repo", "tsekkaa repo"), fix main/master, or add a skill to ar-skills.
+description: Create, check or maintain a GitHub repository for a project (default owner anttiraisala, branch master, MIT). Use when asked to create a repo, check a repo ("check repo", "tsekkaa repo"), suggest a repo name ("suggest repo name", "ehdota repon nimeä", "keksi repolle nimi"), fix main/master, or add a skill to ar-skills.
 ---
 
 # ar-git-repo
 
-Version: 2 (raise by one on every change to this file, and keep the number in the README skill list the same).
+Version: 3 (raise by one on every change to this file, and keep the number in the README skill list the same).
 
 Creates, checks and maintains Git repositories the way the maintainer wants them. Chat in the language the user writes in; everything written into a repository is in English.
 
@@ -28,7 +28,7 @@ Commit messages are English and end with the attribution lines the session gives
 
 ## Mode 1: create a repo
 
-1. Ask for the name and a one-line purpose (and the owner if it is not the default). Plan the repo: type of project, files that fit it.
+1. Ask for the name and a one-line purpose (and the owner if it is not the default). If the user has no name yet, run Mode 4 (suggest repo name) first. Plan the repo: type of project, files that fit it.
 2. Create it with `gh repo create OWNER/NAME --public --description "..."`. If that is refused (some sessions may only use repositories that are already configured), give the short browser steps (github.com/new, name, public, no files added) and wait until the user says it exists, then clone it.
 3. Inspect the state (see Mode 2). In an empty repo create the branch `master` and push it first (`git checkout -b master`, then `git push -u origin master`); then check that `master` became the default branch, and if not, change it (`gh repo edit --default-branch master`).
 4. First files by project type. Always: `LICENSE` (MIT), `README.md`, `.gitignore`, `CLAUDE.md` (working rules and decisions), `PROGRESS.md` (status, what was and was not tested, planned work, open questions). Add the project's own skeleton as needed.
@@ -58,6 +58,20 @@ Placed right after the title and one-line description, so that it is visible at 
 - Where the instructions for AI assistants are: `CLAUDE.md` (rules) and `PROGRESS.md` (status).
 - In a skills collection: how to download one skill (the Raw link of its `SKILL.md` and a `curl -L -o SKILL.md <raw url>` line) and the whole collection (ZIP link of the branch and the clone command).
 - For a private repo: a note that downloads need to be signed in or use a token; do not put a token in the file.
+
+## Mode 4: suggest repo name
+
+Triggered by "suggest repo name", "ehdota repon nimeä", "keksi repolle nimi" or similar, and by Mode 1 when there is no name. It only proposes; it creates nothing. Once the user picks a name, continue with Mode 1.
+
+1. Find out what is being named:
+   - No extra text: read the whole conversation and work out what is being built. If it names several projects, list the ones you found and ask which one the repo is for; never guess.
+   - Extra text ("lyhyt ja leikkisä", "something with cards"): treat it as the steering and keep it above what the conversation suggests.
+   - Too little to go on: ask a few short guiding questions (what it does, who uses it, short or descriptive, any word it must or must not contain), then propose.
+2. Count: default 20. The user can ask for another number ("suggest 10", "ehdota 30"). Spread the names evenly over five styles: descriptive, short brand name, playful, local (place, language or in-joke), acronym. Every style gets at least one name.
+3. Names: lowercase kebab-case, no spaces, not long (about 30 characters at most), like `poker-table-designer`, `ai-slop-games`, `ar-skills`. English first. Finnish words are allowed and fit when the context is Finnish or local (for example Molino for the home casino); decide from the context and say so in the idea line. A repo name is a proper noun, so it is an exception to the English-only rule.
+4. Availability: for the names you are about to show, check that the owner has no repo of that name (`gh api repos/OWNER/NAME`; 404 means free). Drop taken names and say how many were dropped. Names other owners use do not matter.
+5. Output: one table per style with three columns: name, idea (one sentence: why the name works), description (one line in English, about 80 to 100 characters, written to fit that name's angle, not the same sentence for every name). Then your three favourites with one sentence each. Offer another round on request.
+6. When the user picks a name, use its description as it is in `gh repo create ... --description "..."` (or give it for the browser form), and use the same sentence as the README's one-line description.
 
 ## Mode 3: skills collection (ar-skills)
 

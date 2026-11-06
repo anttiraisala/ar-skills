@@ -17,3 +17,4 @@ A collection of Claude skills by Antti Raisala. One folder per skill: `skills/<n
 - Skills are saved in the user's account through a review card; the copy here is the source for downloading.
 - Every skill has a `Version:` line in its body. Raise it on every change and keep the README list in step. The repo copy is the source of truth; the account copy is updated only when the maintainer saves the review card.
 - A skill that relies on another skill has a `Requires: name1, name2` line directly under its `Version:` line (`none` if it has no dependency). The `deps` command of `ar-skill-repo` checks that every required skill exists in `skills/` and that there are no cycles.
+- Repo names are proper nouns: English first, but Finnish words are allowed when the context is Finnish or local (decided by the maintainer). Their one-line descriptions are English.
