@@ -1,11 +1,11 @@
 ---
 name: ar-skill-repo
-description: Maintain the skills collection repository anttiraisala/ar-skills. Use when asked to add, update, rename, remove, list, check, package or release a skill in ar-skills, to sync or fix the README skill list, to show or check skill dependencies, or on commands such as "lisää skilli repoon", "listaa skillit", "tsekkaa skillit", "päivitä skilli", "paketoi skilli", "skill repo status".
+description: Maintain the skills collection repository anttiraisala/ar-skills. Use when asked to add, update, rename, remove, list, check, package or release a skill in ar-skills, to sync or fix the README skill list, to show or check skill dependencies, to write the skill critique report of the whole collection, or on commands such as "lisää skilli repoon", "listaa skillit", "tsekkaa skillit", "päivitä skilli", "paketoi skilli", "skill repo status", "skill critique", "skill-raportti", "arvioi kokoelma".
 ---
 
 # ar-skill-repo
 
-Version: 3 (raise by one on every change to this file, and keep the number in the README skill list the same).
+Version: 4 (raise by one on every change to this file, and keep the number in the README skill list the same).
 Requires: ar-git-repo
 
 Maintains the repository `anttiraisala/ar-skills`: one folder per skill in `skills/<name>/SKILL.md`, plus `README.md`, `CLAUDE.md`, `PROGRESS.md`, `LICENSE`. Chat in the language the user writes in; everything written into the repository is in English.
@@ -52,7 +52,7 @@ Keeps the top of the README and the skill list current. Run it after every add, 
 1. The "For use with AI" section, placed right after the title and one-line description (the layout `ar-git-repo` defines), between `<!-- ai:start -->` and `<!-- ai:end -->`. It always holds: the repository URL and default branch, the command that gets the whole repo (`git clone https://github.com/anttiraisala/ar-skills.git`), the ZIP link of the whole collection, a `curl` line for downloading one skill (example: the first skill in the list), and the pointers to `CLAUDE.md` and `PROGRESS.md`. If the section or its markers are missing, the script creates them in the right place.
 2. The skill list between `<!-- skills:start -->` and `<!-- skills:end -->`: one row per folder in `skills/`, alphabetical, version from the `Version:` line, download link from the name, explanation kept from the existing row (a new skill gets the first sentence of its description, to be shortened by hand).
 
-Run the script below from the repo root. Without `--write` it prints the diff and exits 1 if the README is out of date; with `--write` it fixes the README. It stops with an error if the README does not start with a title and a one-line description. Review the diff, then follow the commit rule.
+Run the script below from the repo root. Without `--write` it prints the diff and exits 1 if the README is out of date; with `--write` it fixes the README. It stops with an error if the README does not start with a title and a one-line description. Review the diff, then follow the commit rule. The critique block (see `critique`) is never touched by `sync`.
 
 ```python
 #!/usr/bin/env python3
@@ -156,6 +156,7 @@ Read-only lint of the whole collection. Report in the user's language, then prop
 7. `PROGRESS.md` has a row for the latest change of every skill.
 8. Dependencies: run the `deps` script; every skill named on a `Requires:` line exists in `skills/`, with no cycles.
 9. Drift: if the user pastes or names the account copy of a skill, compare its `Version:` with the repo copy and say which is newer.
+10. Critique: the README has the `## Skill critique` block and the versions on its "Covers:" line equal the current `Version:` lines of all skills. If the block is missing or the versions differ, say the critique is stale and offer `critique`.
 
 ### deps ("riippuvuudet")
 Read-only. Show which skill requires which (the `Requires:` line, see below) and run the checker below. It reports a required skill that is not in `skills/` and circular requirements, and exits 1 on either. The same script is rule 8 of `check`.
@@ -233,13 +234,23 @@ Requires: none
 ### review ("arvioi skilli <name>")
 Read-only quality review of one skill: are the triggers specific enough to fire and not fire wrongly, are steps unambiguous, are destructive actions gated by an explicit request, is anything contradicting `CLAUDE.md` or another skill. Give findings with concrete wording fixes; change nothing without approval.
 
+### critique ("skill critique", "skill-raportti", "arvioi kokoelma")
+Critical report on the whole collection. `review` looks at one skill; `critique` looks at all of them together. An optional focus word narrows it: `critique overlap`, `critique gaps`, `critique size`.
+
+1. Read every `skills/*/SKILL.md` and the README, `CLAUDE.md` and `PROGRESS.md`; note each skill's `Version:` and size.
+2. Write one line per skill on what it owns, then look at the collection as a whole for: overlap (the same rule, command or trigger phrase in two skills), gaps (a task the user keeps doing that no skill covers), skills that have grown too long (over about 12 kB) or do several jobs, descriptions that fire wrongly or never, parts nobody has run, contradictions with `CLAUDE.md` or another skill.
+3. Write at most seven findings, most important first. Each has a number, the finding, evidence (file and section, so the user can check it), one proposal (remove from skill X and refer to Y, extract a shared skill, split a skill, rewrite a description, new skill or action, or leave as is with the reason) and a status: `open`, `accepted` or `declined`. A finding the user declined earlier is not proposed again unless the situation changed; accepted findings keep their status until done.
+4. Draw one Venn diagram for each pair or triple of skills with notable overlap: circles for the skills, the overlap region lists the shared items, the other regions list what each skill owns alone (short labels, about 15 characters). For four or more skills with overlap use an overlap table instead (skills as rows and columns, none, low or high) and a Venn only for the strongest pair. Write a standalone SVG with `<title>`, `<desc>`, its own `<style>` for light and dark mode and no scripts, and save it as `docs/skill-critique.svg`.
+5. Show the report and the picture in the chat in the user's language, then ask once: update the README and the picture? If the user has already said to update, do not ask. On yes: write `docs/skill-critique.svg` and replace the block between `<!-- critique:start -->` and `<!-- critique:end -->` under `## Skill critique` (directly below the skill list, above the licence; create the section if it is missing) with one line "AI-generated critique, <date>. Covers: <name vN>, ...", the image link and the findings table `# | Finding | Evidence | Proposal | Status`, all in English. Add a `PROGRESS.md` row, then follow the commit rule. On no, change nothing in the repo.
+6. The report is a separate commit from any skill change. `sync` never touches the critique block, and `check` rule 10 tells when it is stale.
+
 ## Skills that refer to each other
 
 A skill can rely on another skill, for example a coding skill on a language-rules skill. Give it a `Requires:` line directly under the `Version:` line: `Requires: name1, name2` (skill names only, or `none`). In the body, say where the other skill is used ("follow the rules of `name1`"). Claude loads a skill only when its description fits the task or when another skill sends it there, so a `Requires:` line is a pointer, not a guarantee: the body should also say what to do when the required skill is not installed (read its raw file from the repository, or ask the user). Keep chains short and never circular.
 
 ## Ideas and critique (always on)
 
-When a skill is added, updated or reviewed, and whenever the user asks for ideas, think critically and say what you see, in at most three short points, each marked as an idea or a concern. Things to look for: rules duplicated in two skills that belong in one shared skill referenced through `Requires:`; descriptions too broad (fires wrongly) or too narrow (never fires), or missing the user's actual wording including Finnish with diacritics; a skill that has grown long enough to split; fragile assumptions (file paths, tools that may be absent, the account copy being older than the repo copy); contradictions with `CLAUDE.md` or another skill; steps nobody tested. Propose, never implement without approval, and do not repeat an idea the user has declined unless the situation changed.
+When a skill is added, updated or reviewed, and whenever the user asks for ideas, think critically and say what you see, in at most three short points, each marked as an idea or a concern. Things to look for: rules duplicated in two skills that belong in one shared skill referenced through `Requires:`; descriptions too broad (fires wrongly) or too narrow (never fires), or missing the user's actual wording including Finnish with diacritics; a skill that has grown long enough to split; fragile assumptions (file paths, tools that may be absent, the account copy being older than the repo copy); contradictions with `CLAUDE.md` or another skill; steps nobody tested. Propose, never implement without approval, and do not repeat an idea the user has declined unless the situation changed. For the whole collection use the `critique` command.
 
 ## Ongoing rules
 
