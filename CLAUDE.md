@@ -15,3 +15,4 @@ A collection of Claude skills by Antti Raisala. One folder per skill: `skills/<n
 - The README starts with the title, one line, and the "For use with AI" section.
 - Never commit secrets. Never force-push.
 - Skills are saved in the user's account through a review card; the copy here is the source for downloading.
+- Every skill has a `Version:` line in its body. Raise it on every change and keep the README list in step. The repo copy is the source of truth; the account copy is updated only when the maintainer saves the review card.

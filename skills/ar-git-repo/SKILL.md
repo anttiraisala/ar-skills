@@ -5,6 +5,8 @@ description: Create, check or maintain a GitHub repository for a project (defaul
 
 # ar-git-repo
 
+Version: 2 (raise by one on every change to this file, and keep the number in the README skill list the same).
+
 Creates, checks and maintains Git repositories the way the maintainer wants them. Chat in the language the user writes in; everything written into a repository is in English.
 
 ## Defaults (the user may override any of them)
@@ -35,6 +37,8 @@ Commit messages are English and end with the attribution lines the session gives
 ## Mode 2: check repo (read-only)
 
 Triggered by "check repo", "tsekkaa repo" or similar. Change nothing without approval.
+
+0. Version check: fetch the raw `SKILL.md` of this skill from `anttiraisala/ar-skills` (see Source and updating) and compare its `Version:` line with the one above. If the repo is newer, tell the user that the saved copy of the skill is out of date and offer the review card for the new text. If the fetch fails, say so and carry on.
 
 1. Does the repo exist, who owns it, is it public or private, is there write access (`gh api repos/OWNER/NAME`: `permissions`, `default_branch`, `visibility`, `description`)?
 2. Branches and tags (`git ls-remote --heads --tags`), open pull requests, last push.
@@ -67,3 +71,13 @@ The repo `anttiraisala/ar-skills` collects the maintainer's skills, one folder p
 ## Ongoing work in any repo
 
 Keep `README.md` (usage), `CLAUDE.md` (decisions) and `PROGRESS.md` (status and honest testing notes) in step with every change, as part of the same commit. Never claim something was tested if it was not.
+
+## Source and updating of this skill
+
+This skill is loaded from the user's account, but its source of truth is the repository `anttiraisala/ar-skills`, file `skills/ar-git-repo/SKILL.md` (raw: `https://raw.githubusercontent.com/anttiraisala/ar-skills/master/skills/ar-git-repo/SKILL.md`). The skill cannot update the account copy by itself: the user saves it from a review card. So when the user asks to change this skill (or any skill of the collection):
+
+1. Make sure the repo is attached to the session and cloned (`add_repo` with push access if it is not), then edit `skills/<name>/SKILL.md` there and raise its `Version:` by one.
+2. Update the README skill list (row text and version), `PROGRESS.md` and, if a rule changed, `CLAUDE.md`.
+3. Follow the announce-update-wait rule, then commit, push and verify.
+4. Show the full updated text as a review card (`propose_skills`) and tell the user to save it, because until he does the account copy stays old.
+5. The repo settings (description, default branch) may be unwritable from a session; then say so and give the browser steps.

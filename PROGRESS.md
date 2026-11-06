@@ -3,6 +3,7 @@
 | # | Date | Change |
 |---|---|---|
 | 1 | 2026-11-06 | Repository created; first commit with `ar-git-repo` (create, check and maintain repos, skills-collection mode, README skill list). |
+| 2 | 2026-11-06 | `ar-git-repo` version 2: version line, version check in check mode, "Source and updating" section; README list shows versions. |
 
 ## Testing
 
