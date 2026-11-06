@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 390" width="680" height="390" role="img">
+<title>Overlap of ar-git-repo and ar-skill-repo</title>
+<desc>Two overlapping circles. ar-git-repo only: create repo, check repo, suggest name, external commit, main to master. Overlap: commit rule, README list, AI section, skill adding. ar-skill-repo only: list and check, pack and tag, deps and review, critique.</desc>
+<style>
+.t{font:500 14px sans-serif;fill:#1f2328}
+.s{font:12px sans-serif;fill:#1f2328}
+@media (prefers-color-scheme: dark){.t,.s{fill:#e6edf3}}
+</style>
+<circle cx="255" cy="200" r="150" fill="#7F77DD" fill-opacity="0.35" stroke="#534AB7" stroke-width="1"/>
+<circle cx="425" cy="200" r="150" fill="#1D9E75" fill-opacity="0.35" stroke="#0F6E56" stroke-width="1"/>
+<text class="t" x="190" y="34" text-anchor="middle">ar-git-repo</text>
+<text class="t" x="490" y="34" text-anchor="middle">ar-skill-repo</text>
+<text class="s" x="190" y="150" text-anchor="middle">create repo</text>
+<text class="s" x="190" y="175" text-anchor="middle">check repo</text>
+<text class="s" x="190" y="200" text-anchor="middle">suggest name</text>
+<text class="s" x="190" y="225" text-anchor="middle">external commit</text>
+<text class="s" x="190" y="250" text-anchor="middle">main to master</text>
+<text class="t" x="340" y="150" text-anchor="middle">overlap</text>
+<text class="s" x="340" y="178" text-anchor="middle">commit rule</text>
+<text class="s" x="340" y="203" text-anchor="middle">README list</text>
+<text class="s" x="340" y="228" text-anchor="middle">AI section</text>
+<text class="s" x="340" y="253" text-anchor="middle">skill adding</text>
+<text class="s" x="490" y="160" text-anchor="middle">list, check</text>
+<text class="s" x="490" y="190" text-anchor="middle">pack, tag</text>
+<text class="s" x="490" y="220" text-anchor="middle">deps, review</text>
+<text class="s" x="490" y="250" text-anchor="middle">critique</text>
+</svg>
