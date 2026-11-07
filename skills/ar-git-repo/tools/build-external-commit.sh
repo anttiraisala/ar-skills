@@ -144,6 +144,8 @@ NFILES="$(wc -l <"$ROWS" | tr -d ' ')"
 } >"$PK/COMMIT_MESSAGE.txt"
 
 install -m 0755 "$TOOLS/apply-external-commit.sh" "$PK/apply-external-commit.sh"
+[ -f "$TOOLS/dry-run-apply-external-commit.sh" ] || fail "dry-run-apply-external-commit.sh not found next to this script"
+install -m 0755 "$TOOLS/dry-run-apply-external-commit.sh" "$PK/dry-run-apply-external-commit.sh"
 
 # --------------------------------------------------------------------- report
 ADD=$(awk -F'\t' '$1=="A"' "$ROWS" | wc -l | tr -d ' ')
@@ -180,7 +182,7 @@ DEL=$(awk -F'\t' '$1=="D"' "$ROWS" | wc -l | tr -d ' ')
   echo '```'
   echo "unzip $NAME.zip"
   echo "cd $NAME"
-  echo "./apply-external-commit.sh --dry-run   # verify everything, change nothing"
+  echo "./dry-run-apply-external-commit.sh      # same as apply-external-commit.sh --dry-run: verify everything, change nothing"
   echo "./apply-external-commit.sh --no-push   # commit in a temporary clone, keep it, do not push"
   echo "./apply-external-commit.sh             # commit and push (never forced)"
   echo '```'
@@ -228,9 +230,9 @@ INLINE=0
     echo "Steps:"
     echo "1. Unpack it: unzip $NAME.zip && cd $NAME"
     echo "2. Check it: sha256sum -c SHA256SUMS"
-    echo "3. Run: ./apply-external-commit.sh --dry-run"
+    echo "3. Run: ./dry-run-apply-external-commit.sh   (it calls apply-external-commit.sh --dry-run)"
     echo "4. If that ends with 'DRY RUN OK' (or 'nothing to do'), run: ./apply-external-commit.sh"
-    echo "   (the script keeps its executable bit; do not run chmod, do not edit any file of the package)"
+    echo "   (the scripts keep their executable bit; do not run chmod, do not edit any file of the package)"
     echo
     echo "Rules: never use --force, never push by hand, never edit the package files."
     echo "If the script exits with 2 (guard or integrity) or 3 (conflict), stop and report; do not try to work around it."
@@ -265,7 +267,7 @@ INLINE=0
 # ------------------------------------------------------------------ checksums
 (cd "$PK" && find . -type f ! -name SHA256SUMS -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sed -E 's|^([0-9a-f]{64})  \./|\1  |') >"$PK/SHA256SUMS"
 chmod 644 "$PK/SHA256SUMS" "$PK/REPORT.md" "$PK/PROMPT.txt" "$PK/MANIFEST.tsv" "$PK/external-commit.meta" "$PK/COMMIT_MESSAGE.txt"
-chmod 755 "$PK/apply-external-commit.sh"
+chmod 755 "$PK/apply-external-commit.sh" "$PK/dry-run-apply-external-commit.sh"
 
 # ------------------------------------------------------------------------ zip
 if command -v zip >/dev/null 2>&1; then
@@ -287,19 +289,20 @@ PY
 fi
 
 # ------------------------------------------------------------ self-verification
-python3 -I - "$ZIP" "$NAME" <<'PY' || fail "the zip does not keep the executable bit of apply-external-commit.sh"
+python3 -I - "$ZIP" "$NAME" <<'PY' || fail "the zip does not keep the executable bit of the apply scripts"
 import sys, zipfile
-z = zipfile.ZipFile(sys.argv[1]); name = sys.argv[2]
-zi = z.getinfo(name + "/apply-external-commit.sh")
-mode = zi.external_attr >> 16
-print("OK   zip stores apply-external-commit.sh with unix mode %o" % (mode & 0o7777))
-sys.exit(0 if mode & 0o111 == 0o111 else 1)
+z = zipfile.ZipFile(sys.argv[1]); name = sys.argv[2]; bad = 0
+for f in ("apply-external-commit.sh", "dry-run-apply-external-commit.sh"):
+    mode = z.getinfo(name + "/" + f).external_attr >> 16
+    print("OK   zip stores %s with unix mode %o" % (f, mode & 0o7777))
+    if mode & 0o111 != 0o111: bad = 1
+sys.exit(bad)
 PY
 if command -v unzip >/dev/null 2>&1; then
   mkdir "$TMP/verify" && unzip -q "$ZIP" -d "$TMP/verify" || fail "the zip cannot be unpacked"
-  [ -x "$TMP/verify/$NAME/apply-external-commit.sh" ] || fail "after unpacking, apply-external-commit.sh is not executable"
+  [ -x "$TMP/verify/$NAME/apply-external-commit.sh" ] && [ -x "$TMP/verify/$NAME/dry-run-apply-external-commit.sh" ] || fail "after unpacking, an apply script is not executable"
   (cd "$TMP/verify/$NAME" && sha256sum -c --quiet SHA256SUMS) || fail "SHA256SUMS does not verify after unpacking"
-  echo "OK   unpacked copy: apply-external-commit.sh is executable and SHA256SUMS verifies"
+  echo "OK   unpacked copy: both apply scripts are executable and SHA256SUMS verifies"
 else
   echo "NOTE unzip is not installed; the unpack check was skipped"
 fi

@@ -5,7 +5,7 @@ description: Create, check or maintain a GitHub repository for a project (defaul
 
 # ar-git-repo
 
-Version: 5 (raise by one on every change to this file, and keep the number in the README skill list the same).
+Version: 6 (raise by one on every change to this file, and keep the number in the README skill list the same).
 Requires: none
 
 Creates, checks and maintains Git repositories the way the maintainer wants them. Chat in the language the user writes in; everything written into a repository is in English.
@@ -84,13 +84,14 @@ Triggered by "create external commit", "external commit", "tee ulkoinen commit",
 
 ### The tools
 
-Two bash scripts do the work; they live in this skill's folder in the repository `anttiraisala/ar-skills`, `skills/ar-git-repo/tools/` (raw base URL `https://raw.githubusercontent.com/anttiraisala/ar-skills/master/skills/ar-git-repo/tools/`):
+Three bash scripts do the work (plus the self-test); they live in this skill's folder in the repository `anttiraisala/ar-skills`, `skills/ar-git-repo/tools/` (raw base URL `https://raw.githubusercontent.com/anttiraisala/ar-skills/master/skills/ar-git-repo/tools/`):
 
 - `build-external-commit.sh` builds the zip.
 - `apply-external-commit.sh` is the script that goes into the zip and applies it.
+- `dry-run-apply-external-commit.sh` also goes into the zip; it only calls `apply-external-commit.sh --dry-run` (extra arguments are passed on).
 - `selftest-external-commit.sh` tests both end to end in a throwaway directory (local bare repositories only, no network); run it after changing either script.
 
-Both are stored in Git with mode `100755` (`git update-index --chmod=+x`). Get them from a clone of ar-skills; if the session has none, download the two files into one new directory and `chmod +x` them (the only place where `chmod` is needed). If they cannot be fetched, say so and ask the user to attach them; never rewrite them from memory.
+All of them are stored in Git with mode `100755` (`git update-index --chmod=+x`). Get them from a clone of ar-skills; if the session has none, download the three files (build, apply, dry-run) into one new directory and `chmod +x` them (the only place where `chmod` is needed). If they cannot be fetched, say so and ask the user to attach them; never rewrite them from memory.
 
 Build: run from the clone, with the message split into subject and body, and the attribution lines the session gives as trailers:
 
@@ -107,10 +108,11 @@ The zip is named exactly `external-commit-<repo>-<YYYYMMDDHHMMSS>.zip`, for exam
 
 - `files/`: the new content of every added or changed file at its repository path, byte for byte, with the mode it will have in Git (755 or 644).
 - `apply-external-commit.sh`: the apply script, stored with Unix mode 755. The executable bit is kept by the zip and by `unzip` on Linux, so the recipient runs `./apply-external-commit.sh` and never needs `chmod`. Do not rename the script or the folder layout.
+- `dry-run-apply-external-commit.sh`: also mode 755; it runs `apply-external-commit.sh --dry-run` (verify everything, show the plan, change nothing), so the recipient can try the package safely with one command.
 - `MANIFEST.tsv`: one line per file: action (A, M, D), old mode, old SHA-256, new mode, new SHA-256, size, path (`-` where not applicable).
 - `external-commit.meta`: format, repository `owner/name`, remote URL, branch, base commit, timestamp. `COMMIT_MESSAGE.txt`: the commit message.
 - `REPORT.md`: repository, branch, base commit, commit message, a table of every file (action, old and new SHA-256, size, mode), how to run, how to undo, the exit codes and the commands that produced the manifest.
-- `PROMPT.txt`: text to paste into another AI session with write access. Inline form (changes under about 40 kB, all plain text ending in a newline): the task, the rules (write each file byte for byte between the markers, overwrite, touch no other file, set the modes, never force-push, stop and report if the old content does not match), the files in `=====FILE: path=====` and `=====END FILE=====` blocks, a table of modes and SHA-256 values, and the report asked for (in the user's language, at most five lines: commit SHA, whether verification passed, anything unexpected). Otherwise the zip form: unpack the attached package, check `SHA256SUMS`, run `./apply-external-commit.sh --dry-run`, then `./apply-external-commit.sh`, and report the same way.
+- `PROMPT.txt`: text to paste into another AI session with write access. Inline form (changes under about 40 kB, all plain text ending in a newline): the task, the rules (write each file byte for byte between the markers, overwrite, touch no other file, set the modes, never force-push, stop and report if the old content does not match), the files in `=====FILE: path=====` and `=====END FILE=====` blocks, a table of modes and SHA-256 values, and the report asked for (in the user's language, at most five lines: commit SHA, whether verification passed, anything unexpected). Otherwise the zip form: unpack the attached package, check `SHA256SUMS`, run `./dry-run-apply-external-commit.sh`, then `./apply-external-commit.sh`, and report the same way.
 - `SHA256SUMS` for every other file in the package.
 
 The `PROGRESS.md` row for the change is part of the package and says "applied via external commit".
@@ -128,7 +130,7 @@ Needs only `git`, `bash` and `sha256sum`; never `sudo`, `--force`, tokens, or ne
 7. Push without force. If the push is rejected, fetch and rebase once and verify again; on a conflict abort the rebase, exit 3, nothing is pushed. Check that `git ls-remote origin <branch>` equals the new `HEAD`.
 8. Print `PASS <sha>` or `FAIL <reason>` and the undo command (`git revert <sha>`). Exit codes: 0 PASS or nothing to do, 1 error, 2 integrity or guard failure, 3 push conflict.
 
-After building: send the zip with the file tool, give the paste text in the chat (when it is short), and say in a few lines in the user's language that there are two ways: unpack and run `./apply-external-commit.sh` (try `--dry-run` first), or paste the prompt into an AI session with write access. Say what was and was not tested. Do not say anything was pushed.
+After building: send the zip with the file tool, give the paste text in the chat (when it is short), and say in a few lines in the user's language that there are two ways: unpack and run `./dry-run-apply-external-commit.sh` first and then `./apply-external-commit.sh`, or paste the prompt into an AI session with write access. Say what was and was not tested. Do not say anything was pushed.
 
 When the user brings back the result (commit SHA and PASS), check it with `git ls-remote https://github.com/OWNER/NAME.git <branch>` and say whether the remote equals it. If it cannot be checked, say so. External commit packages are never committed to the repository.
 

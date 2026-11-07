@@ -41,7 +41,7 @@ Rules for AI assistants working in this repo are in [CLAUDE.md](CLAUDE.md); stat
 <!-- skills:start -->
 | Skill | Version | What it does | Download |
 |---|---|---|---|
-| [ar-git-repo](skills/ar-git-repo/) | 5 | Creates, checks and maintains GitHub repositories (master branch, MIT, README, CLAUDE.md, PROGRESS.md), suggests repo names, builds a tested external commit zip (with an executable apply script) when a push fails, and keeps this list up to date. | [SKILL.md](https://raw.githubusercontent.com/anttiraisala/ar-skills/master/skills/ar-git-repo/SKILL.md) |
+| [ar-git-repo](skills/ar-git-repo/) | 6 | Creates, checks and maintains GitHub repositories (master branch, MIT, README, CLAUDE.md, PROGRESS.md), suggests repo names, builds a tested external commit zip (with an executable apply script) when a push fails, and keeps this list up to date. | [SKILL.md](https://raw.githubusercontent.com/anttiraisala/ar-skills/master/skills/ar-git-repo/SKILL.md) |
 | [ar-requirement-driven-development](skills/ar-requirement-driven-development/) | 1 | Guides Requirement Driven Development (RDD) in a project: interviews the user and keeps the requirements, ideas, action points and progress files current. | [SKILL.md](https://raw.githubusercontent.com/anttiraisala/ar-skills/master/skills/ar-requirement-driven-development/SKILL.md) |
 | [ar-skill-repo](skills/ar-skill-repo/) | 5 | Maintains this skills collection: add, update, check, pack and tag skills, keeps the README AI section and skill list in sync, checks Requires links, writes the skill critique report. | [SKILL.md](https://raw.githubusercontent.com/anttiraisala/ar-skills/master/skills/ar-skill-repo/SKILL.md) |
 <!-- skills:end -->
@@ -49,7 +49,7 @@ Rules for AI assistants working in this repo are in [CLAUDE.md](CLAUDE.md); stat
 ## Commands
 
 <!-- commands:start -->
-### ar-git-repo v5
+### ar-git-repo v6
 
 Creates, checks and maintains Git repositories with the maintainer's defaults: owner `anttiraisala`, public, branch `master`, MIT licence. Every commit follows one rule: update the description files, announce the commit, wait for the go-ahead, then check that the remote equals `HEAD`. Everything written into a repository is English.
 
@@ -59,7 +59,7 @@ Creates, checks and maintains Git repositories with the maintainer's defaults: o
 | Mode 2: check repo | `check repo`, `tsekkaa repo`, `fix main/master` | Read-only check of owner, access, branches, pull requests and base files; compares the saved skill version with the repo; proposes numbered fixes, including renaming `main` to `master`. |
 | Mode 3: skills collection | `add a skill to ar-skills` | Rules for adding or changing a skill in ar-skills and keeping the README list in step. |
 | Mode 4: suggest repo name | `suggest repo name`, `ehdota repon nimeä`, `keksi repolle nimi` | Proposes 20 names in five styles, drops names the owner already uses and shows three favourites; creates nothing. |
-| Mode 5: external commit | `external commit`, `ulkoinen commit`, `tee ulkoinen commit`, `deferred commit` | When a commit or push fails (or on request), runs `tools/build-external-commit.sh` to build `external-commit-<repo>-<YYYYMMDDHHMMSS>.zip`: the files, an executable `apply-external-commit.sh` (checks, `--dry-run`, `--no-push`, PASS line and undo command), `REPORT.md`, `PROMPT.txt` and `SHA256SUMS`. `tools/selftest-external-commit.sh` tests it end to end. |
+| Mode 5: external commit | `external commit`, `ulkoinen commit`, `tee ulkoinen commit`, `deferred commit` | When a commit or push fails (or on request), runs `tools/build-external-commit.sh` to build `external-commit-<repo>-<YYYYMMDDHHMMSS>.zip`: the files, an executable `apply-external-commit.sh` (checks, `--dry-run`, `--no-push`, PASS line and undo command), an executable `dry-run-apply-external-commit.sh` that runs it with `--dry-run`, `REPORT.md`, `PROMPT.txt` and `SHA256SUMS`. `tools/selftest-external-commit.sh` tests it end to end. |
 
 ### ar-requirement-driven-development v1
 

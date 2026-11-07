@@ -57,7 +57,7 @@ a = z.getinfo(n + "/files/dir/new.sh").external_attr >> 16 & 0o7777
 b = z.getinfo(n + "/files/dir/with space.txt").external_attr >> 16 & 0o7777
 sys.exit(0 if (a, b) == (0o755, 0o644) else 1)
 PY
-for f in apply-external-commit.sh REPORT.md PROMPT.txt SHA256SUMS MANIFEST.tsv COMMIT_MESSAGE.txt; do
+for f in apply-external-commit.sh dry-run-apply-external-commit.sh REPORT.md PROMPT.txt SHA256SUMS MANIFEST.tsv COMMIT_MESSAGE.txt; do
   check "zip contains $f" python3 -I -c "import sys,zipfile;zipfile.ZipFile(sys.argv[1]).getinfo(sys.argv[2])" "$ZIP" "$BN/$f"
 done
 
@@ -65,11 +65,16 @@ echo "== unpack and run directly (no chmod)"
 mkdir "$T/x" && unzip -q "$ZIP" -d "$T/x" && ok "unzip works on Linux" || bad "unzip"
 P="$T/x/$BN"
 check "apply script is executable after unzip" test -x "$P/apply-external-commit.sh"
+check "dry-run script is executable after unzip" test -x "$P/dry-run-apply-external-commit.sh"
 check "SHA256SUMS verifies" bash -c "cd '$P' && sha256sum -c --quiet SHA256SUMS"
 cd "$P" || exit 1
 expect_rc "dry run" 0 ./apply-external-commit.sh --dry-run --remote "$T/A/ar-skills.git"
 echo "$LAST" | grep -q "DRY RUN OK" && ok "dry run says DRY RUN OK" || bad "dry run text"
 [ "$(G "$T/A/ar-skills.git" rev-parse master)" = "$BASE" ] && ok "dry run left the remote unchanged" || bad "dry run changed the remote"
+
+expect_rc "dry-run script (direct start)" 0 ./dry-run-apply-external-commit.sh --remote "$T/A/ar-skills.git"
+echo "$LAST" | grep -q "DRY RUN OK" && ok "dry-run script runs apply with --dry-run" || bad "dry-run script text"
+[ "$(G "$T/A/ar-skills.git" rev-parse master)" = "$BASE" ] && ok "dry-run script left the remote unchanged" || bad "dry-run script changed the remote"
 
 echo "== --no-push: real commit in a temporary clone"
 expect_rc "no-push run" 0 ./apply-external-commit.sh --no-push --remote "$T/A/ar-skills.git"
