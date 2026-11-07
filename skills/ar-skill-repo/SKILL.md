@@ -1,11 +1,11 @@
 ---
 name: ar-skill-repo
-description: Maintain the skills collection repository anttiraisala/ar-skills. Use when asked to add, update, rename, remove, list, check, package or release a skill in ar-skills, to sync or fix the README skill list, to show or check skill dependencies, to write the skill critique report of the whole collection, or on commands such as "lisää skilli repoon", "listaa skillit", "tsekkaa skillit", "päivitä skilli", "paketoi skilli", "skill repo status", "skill critique", "skill-raportti", "arvioi kokoelma".
+description: Maintain the skills collection repository anttiraisala/ar-skills. Use when asked to add, update, rename, remove, list, check, package or release a skill in ar-skills, to sync or fix the README skill list and command overview, to show or check skill dependencies, to write the skill critique report of the whole collection, or on commands such as "lisää skilli repoon", "listaa skillit", "tsekkaa skillit", "päivitä skilli", "paketoi skilli", "skill repo status", "skill critique", "skill-raportti", "arvioi kokoelma".
 ---
 
 # ar-skill-repo
 
-Version: 4 (raise by one on every change to this file, and keep the number in the README skill list the same).
+Version: 5 (raise by one on every change to this file, and keep the number in the README skill list the same).
 Requires: ar-git-repo
 
 Maintains the repository `anttiraisala/ar-skills`: one folder per skill in `skills/<name>/SKILL.md`, plus `README.md`, `CLAUDE.md`, `PROGRESS.md`, `LICENSE`. Chat in the language the user writes in; everything written into the repository is in English.
@@ -37,22 +37,23 @@ Read-only. Show every skill in `skills/` with version, description and file size
 1. Get the skill text: pasted by the user, an uploaded file, or an existing skill from the user's account.
 2. Validate it with the `check` rules below before writing anything.
 3. Create `skills/<name>/SKILL.md`. Name is lowercase kebab-case and equals the folder. Add `Version: 1` as the first line of the body if missing.
-4. Run `sync`, add a row to `PROGRESS.md`, announce, wait, commit, push, verify.
+4. Run `sync`, write the skill's section of the command overview (see `sync`), add a row to `PROGRESS.md`, announce, wait, commit, push, verify.
 5. Show the full text as a review card (`propose_skills`) when available, and tell the user to save it; the account copy changes only when he saves it.
 
 ### update ("päivitä skilli <name>")
-Edit the skill, raise its `Version:` by one, run `sync`, add a `PROGRESS.md` row, then the commit rule. Show the review card afterwards. Repo copy is the source of truth.
+Edit the skill, raise its `Version:` by one, run `sync`, refresh the skill's section of the command overview, add a `PROGRESS.md` row, then the commit rule. Show the review card afterwards. Repo copy is the source of truth.
 
 ### rename and remove
-Only on an explicit request. Rename: `git mv skills/old skills/new`, change `name:`, run `sync`, record it in `PROGRESS.md`. Remove: delete the folder, run `sync`, record it. Remind the user to delete the account copy himself, since a session cannot.
+Only on an explicit request. Rename: `git mv skills/old skills/new`, change `name:`, run `sync`, rename its section in the command overview, record it in `PROGRESS.md`. Remove: delete the folder, run `sync`, delete its section in the command overview, record it. Remind the user to delete the account copy himself, since a session cannot.
 
 ### sync ("synkkaa lista", "päivitä README")
-Keeps the top of the README and the skill list current. Run it after every add, update, rename or remove, and whenever `check` finds drift. It maintains two marked blocks in `README.md`:
+Keeps the top of the README and the skill list current. Run it after every add, update, rename or remove, and whenever `check` finds drift. It maintains three marked blocks in `README.md`:
 
-1. The "For use with AI" section, placed right after the title and one-line description (the layout `ar-git-repo` defines), between `<!-- ai:start -->` and `<!-- ai:end -->`. It always holds: the repository URL and default branch, the command that gets the whole repo (`git clone https://github.com/anttiraisala/ar-skills.git`), the ZIP link of the whole collection, a `curl` line for downloading one skill (example: the first skill in the list), and the pointers to `CLAUDE.md` and `PROGRESS.md`. If the section or its markers are missing, the script creates them in the right place.
+1. The "For use with AI" section, placed right after the title and one-line description (the layout `ar-git-repo` defines), between `<!-- ai:start -->` and `<!-- ai:end -->`. It always holds: the repository URL and default branch, the command that gets the whole repo (`git clone https://github.com/anttiraisala/ar-skills.git`), the ZIP link of the whole collection, a `curl` line for downloading one skill (example: the first skill in the list), a start prompt in a code block that the user can paste to an AI agent (read the repo, read `CLAUDE.md` and every `SKILL.md`, install the skills if possible or follow them for the session, change nothing unless asked), and the pointers to `CLAUDE.md` and `PROGRESS.md`. If the section or its markers are missing, the script creates them in the right place.
 2. The skill list between `<!-- skills:start -->` and `<!-- skills:end -->`: one row per folder in `skills/`, alphabetical, version from the `Version:` line, download link from the name, explanation kept from the existing row (a new skill gets the first sentence of its description, to be shortened by hand).
+3. The command overview between `<!-- commands:start -->` and `<!-- commands:end -->`, under `## Commands` directly below the skill list. It is written by this skill, not by the script, because the skills structure their commands differently. One `###` section per skill in alphabetical order, titled `<name> vN`, with two or three sentences on what the skill is for and a table `Command | Triggers | What it does` with one row for every command or mode heading of the skill (the Finnish and English trigger phrases from its text, one or two sentences each). Rewrite a skill's section after every add, update, rename or remove of that skill, and when `check` rule 11 finds drift.
 
-Run the script below from the repo root. Without `--write` it prints the diff and exits 1 if the README is out of date; with `--write` it fixes the README. It stops with an error if the README does not start with a title and a one-line description. Review the diff, then follow the commit rule. The critique block (see `critique`) is never touched by `sync`.
+Run the script below from the repo root. Without `--write` it prints the diff and exits 1 if the README is out of date; with `--write` it fixes the README. It stops with an error if the README does not start with a title and a one-line description. Review the diff, then follow the commit rule. The critique block (see `critique`) and the contents of the command overview are never touched by `sync`; the script only adds empty markers and the `## Commands` heading for the overview if they are missing.
 
 ```python
 #!/usr/bin/env python3
@@ -66,6 +67,7 @@ readme = repo / "README.md"
 text = readme.read_text(encoding="utf-8")
 LS, LE = "<!-- skills:start -->", "<!-- skills:end -->"
 AS, AE = "<!-- ai:start -->", "<!-- ai:end -->"
+CS, CE = "<!-- commands:start -->", "<!-- commands:end -->"
 ml = re.search(re.escape(LS) + r"\n(.*?)\n" + re.escape(LE), text, re.S)
 if not ml:
     sys.exit("README.md has no skills markers")
@@ -93,6 +95,10 @@ for f in sorted((repo / "skills").glob("*/SKILL.md")):
 table = "| Skill | Version | What it does | Download |\n|---|---|---|---|\n" + "\n".join(rows)
 new = text[:ml.start(1)] + table + text[ml.end(1):]
 
+if CS not in new:
+    me = re.search(re.escape(LE), new)
+    new = new[:me.end()] + "\n\n## Commands\n\n" + CS + "\n" + CE + new[me.end():]
+
 example = names[0] if names else "<skill>"
 FENCE = "`" * 3
 ai = f"""{AS}
@@ -112,6 +118,18 @@ Download one skill (example: `{example}`):
 
 {FENCE}
 curl -L -o SKILL.md https://raw.githubusercontent.com/{OWNER}/{NAME}/{BRANCH}/skills/{example}/SKILL.md
+{FENCE}
+
+Start prompt for an AI agent (copy and paste):
+
+{FENCE}
+Read the skills in this repository and take them into use.
+
+1. Clone https://github.com/{OWNER}/{NAME}.git (branch {BRANCH}), or read the files directly from GitHub.
+2. Read CLAUDE.md first, then every skills/<name>/SKILL.md. Each file starts with a name and a description that says when the skill applies.
+3. If you can install skills (for example in Claude Code: copy each folder skills/<name>/ to ~/.claude/skills/), do that. Otherwise follow the skills for the rest of this session whenever their description matches my request.
+4. A skill with a "Requires:" line needs the named skills too.
+5. Do not change the repository or commit anything unless I ask. Tell me in a few lines which skills you loaded.
 {FENCE}
 
 Rules for AI assistants working in this repo are in [CLAUDE.md](CLAUDE.md); status is in [PROGRESS.md](PROGRESS.md). Each skill is a folder `skills/<name>/` with a `SKILL.md`.
@@ -157,6 +175,7 @@ Read-only lint of the whole collection. Report in the user's language, then prop
 8. Dependencies: run the `deps` script; every skill named on a `Requires:` line exists in `skills/`, with no cycles.
 9. Drift: if the user pastes or names the account copy of a skill, compare its `Version:` with the repo copy and say which is newer.
 10. Critique: the README has the `## Skill critique` block and the versions on its "Covers:" line equal the current `Version:` lines of all skills. If the block is missing or the versions differ, say the critique is stale and offer `critique`.
+11. Command overview: between `<!-- commands:start -->` and `<!-- commands:end -->` there is one `###` section per skill, titled `<name> vN` with N equal to the skill's `Version:` line, and its table has one row for every command or mode heading of that skill. If a section is missing, stale or incomplete, say the overview is out of date and offer to rewrite it.
 
 ### deps ("riippuvuudet")
 Read-only. Show which skill requires which (the `Requires:` line, see below) and run the checker below. It reports a required skill that is not in `skills/` and circular requirements, and exits 1 on either. The same script is rule 8 of `check`.
@@ -241,7 +260,7 @@ Critical report on the whole collection. `review` looks at one skill; `critique`
 2. Write one line per skill on what it owns, then look at the collection as a whole for: overlap (the same rule, command or trigger phrase in two skills), gaps (a task the user keeps doing that no skill covers), skills that have grown too long (over about 12 kB) or do several jobs, descriptions that fire wrongly or never, parts nobody has run, contradictions with `CLAUDE.md` or another skill.
 3. Write at most seven findings, most important first. Each has a number, the finding, evidence (file and section, so the user can check it), one proposal (remove from skill X and refer to Y, extract a shared skill, split a skill, rewrite a description, new skill or action, or leave as is with the reason) and a status: `open`, `accepted` or `declined`. A finding the user declined earlier is not proposed again unless the situation changed; accepted findings keep their status until done.
 4. Draw one Venn diagram for each pair or triple of skills with notable overlap: circles for the skills, the overlap region lists the shared items, the other regions list what each skill owns alone (short labels, about 15 characters). For four or more skills with overlap use an overlap table instead (skills as rows and columns, none, low or high) and a Venn only for the strongest pair. Write a standalone SVG with `<title>`, `<desc>`, its own `<style>` for light and dark mode and no scripts, and save it as `docs/skill-critique.svg`.
-5. Show the report and the picture in the chat in the user's language, then ask once: update the README and the picture? If the user has already said to update, do not ask. On yes: write `docs/skill-critique.svg` and replace the block between `<!-- critique:start -->` and `<!-- critique:end -->` under `## Skill critique` (directly below the skill list, above the licence; create the section if it is missing) with one line "AI-generated critique, <date>. Covers: <name vN>, ...", the image link and the findings table `# | Finding | Evidence | Proposal | Status`, all in English. Add a `PROGRESS.md` row, then follow the commit rule. On no, change nothing in the repo.
+5. Show the report and the picture in the chat in the user's language, then ask once: update the README and the picture? If the user has already said to update, do not ask. On yes: write `docs/skill-critique.svg` and replace the block between `<!-- critique:start -->` and `<!-- critique:end -->` under `## Skill critique` (directly below the command overview, above the licence; create the section if it is missing) with one line "AI-generated critique, <date>. Covers: <name vN>, ...", the image link and the findings table `# | Finding | Evidence | Proposal | Status`, all in English. Add a `PROGRESS.md` row, then follow the commit rule. On no, change nothing in the repo.
 6. The report is a separate commit from any skill change. `sync` never touches the critique block, and `check` rule 10 tells when it is stale.
 
 ## Skills that refer to each other
